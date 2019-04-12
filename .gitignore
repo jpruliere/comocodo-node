@@ -1,0 +1,4 @@
+rooms/*
+node_modules
+package-lock.json
+public/assets/bundle.js
