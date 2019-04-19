@@ -10,9 +10,12 @@ const server = Hapi.server({
 const init = async () => {
 
     await server.register([
+        require('./plugins/security'),
         require('./plugins/sockets'),
-        require('./plugins/routes')
+        require('./plugins/routes'),
+        require('./plugins/rooms')
     ]);
+
     await server.start();
     console.log(`Server running at: ${server.info.uri}`);
 };

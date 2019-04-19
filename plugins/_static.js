@@ -5,6 +5,9 @@ module.exports = (server) => {
         path: '/assets/bulma.css',
         handler: {
             file: 'node_modules/bulma/css/bulma.min.css'
+        },
+        options: {
+            auth: false
         }
     });
 
@@ -15,6 +18,9 @@ module.exports = (server) => {
             directory: {
                 path: 'public/assets/'
             }
+        },
+        options: {
+            auth: false
         }
     });
 };
