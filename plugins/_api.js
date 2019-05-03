@@ -19,6 +19,8 @@ module.exports = (server) => {
         method: 'GET',
         path: '/room/{room}/get',
         handler: (request, h) => {
+            // before getting the script, the user logs themself
+            server.methods.enters(Object.assign(request.auth.credentials, {id: request.socket.id}), request.params.room);
             return sc.load(request.params.room);
            
         }

@@ -18,6 +18,17 @@ const app = {
             }
         });
 
+        const updateUsersList = (update) => {
+            app.usersList.innerHTML = '';
+            update.forEach(user => {
+                let li = document.createElement('li');
+                li.innerText = user;
+                app.usersList.appendChild(li);
+            });
+        };
+
+        client.subscribe(location.pathname + '/users', updateUsersList);
+
         const updateScriptBox = (update) => {
             if (!update) update = "";
             if (!app.updateSourceIsMe)
@@ -29,12 +40,6 @@ const app = {
         updateScriptBox(script.payload);
         
         client.subscribe(location.pathname + '/updates', updateScriptBox);
-
-        const updateUsersList = (update) => {
-            
-        };
-
-        client.subscribe(location.pathname + '/users', updateUsersList);
 
         app.scriptBox.addEventListener('input', (evt) => {
             app.updateSourceIsMe = true;
