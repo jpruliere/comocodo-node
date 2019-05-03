@@ -18,6 +18,7 @@ const init = async () => {
 
     await server.start();
     console.log(`Server running at: ${server.info.uri}`);
+
 };
 
 process.on('unhandledRejection', (err) => {
@@ -27,3 +28,5 @@ process.on('unhandledRejection', (err) => {
 });
 
 init();
+
+module.exports = server;
