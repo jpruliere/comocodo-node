@@ -7,6 +7,7 @@ const app = {
     updateSourceIsMe: false,
     scriptBox: document.querySelector('#mcd-builder'),
     usersList: document.querySelector('#users-list'),
+    nameHolder: document.querySelector('#user-name'),
     init: async () => {
 
         client.onError = (err) => console.log(err);
@@ -17,6 +18,8 @@ const app = {
                 }
             }
         });
+
+        app.nameHolder.textContent = "(as " + app.getName() + ")";
 
         const updateUsersList = (update) => {
             app.usersList.innerHTML = '';
@@ -48,6 +51,17 @@ const app = {
         
         client.subscribe(location.pathname + '/updates', updateScriptBox);
 
+        document.querySelector('#change-user-name').addEventListener('click', () => {
+            let newName = prompt('Enter your new username');
+            if (!newName) return;
+            app.setName(newName);
+            client.request({
+                path: '/user/change-name',
+                method: 'POST',
+                payload: [newName, app.room]
+            }).then(() => app.nameHolder.textContent = "(as " + newName + ")");
+        });
+
         app.scriptBox.addEventListener('input', (evt) => {
             app.updateSourceIsMe = true;
             client.request({
@@ -58,10 +72,16 @@ const app = {
         });
     },
     getName: () => {
-        if (!localStorage.getItem('username')) {
-            localStorage.setItem('username', prompt('Enter your username'));
+        if (!app.hasName()) {
+            app.setName(prompt('Enter your username'));
         }
         return localStorage.getItem('username');
+    },
+    setName: (name) => {
+        localStorage.setItem('username', name);
+    },
+    hasName: () => {
+        return !!localStorage.getItem('username');
     }
 };
 

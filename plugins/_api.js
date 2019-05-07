@@ -43,4 +43,14 @@ module.exports = (server) => {
             
         }
     });
+
+    // change username
+    server.route({
+        method: 'POST',
+        path: '/user/change-name',
+        handler: (request, h) => {
+            server.methods.changeName({id: request.socket.id, name: request.payload[0]}, request.payload[1]);
+            return h.response().code(204);
+        }
+    });
 };

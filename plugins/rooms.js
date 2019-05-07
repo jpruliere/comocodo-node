@@ -18,6 +18,10 @@ module.exports = {
                 if (writer == null) this.setWriter(user.id);
             };
 
+            this.updateUser = (user) => {
+                users[user.id] = user.name;
+            }
+
             this.removeUser = (userId) => {
                 delete users[userId];
                 if (writer == userId) {
@@ -117,6 +121,11 @@ module.exports = {
             }
 
             // no need to trigger the update, it is done when the right room is found
+        });
+
+        server.method('changeName', (who, where) => {
+            server.app.userLog[where].updateUser(who);
+            server.methods.updateUsersList(where, server.app.userLog[where]);
         });
 
         server.method('isWriter', (who, where) => {
