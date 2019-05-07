@@ -83,12 +83,10 @@ module.exports = {
                 // if there is already someone waiting to be writer, return
                 if (passPen != null) return false;
 
-                console.log("" + userId + " will soon be a writer !");
-
                 nextWriter = userId;
                 passPen = () => {
-                    writer = userId;
-                    nextWriter = null;
+                   writer = userId;
+                    nextWriter = passPen = null;
                     this.triggerUpdate();
                 }
                 hotSeatTimeout = setTimeout(passPen, HOTSEAT_TIMER * 1000);
@@ -101,7 +99,6 @@ module.exports = {
                 clearTimeout(hotSeatTimeout);
                 hotSeatTimeout = null;
                 passPen();
-                passPen = null;
                 this.triggerUpdate();
                 return true;
             }
@@ -167,6 +164,13 @@ module.exports = {
 
         server.method('askToBeWriter', (who, where) => {
             return server.app.userLog[where].setWriter(who.id);
+        });
+
+        server.method('dropPen', (who, where) => {
+            if (server.app.userLog[where].getWriter() == who.id) {
+                return server.app.userLog[where].dropPen();
+            }
+            return false;
         });
 
         server.method('isWriter', (who, where) => {

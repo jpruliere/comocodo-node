@@ -49,10 +49,17 @@ module.exports = (server) => {
         method: 'GET',
         path: '/room/{room}/pen',
         handler: (request, h) => {
-            console.log("User " + request.socket.id + " asks to be writer");
             return server.methods.askToBeWriter({id: request.socket.id}, request.params.room);
         }
     });
+
+    server.route({
+        method: 'GET',
+        path: '/room/{room}/pen/drop',
+        handler: (request, h) => {
+            return server.methods.dropPen({id: request.socket.id}, request.params.room);
+        }
+    })
 
     // change username
     server.route({
