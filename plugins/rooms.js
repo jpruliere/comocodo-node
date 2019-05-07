@@ -109,7 +109,11 @@ module.exports = {
             }
 
             // no need to trigger the update, it is done when the right room is found
-        })
+        });
+
+        server.method('isWriter', (who, where) => {
+            return server.app.userLog[where].getWriter() === who.id;
+        });
 
         server.method('updateUsersList', async (where, room) => {
             server.publish('/room/' + where + '/users', room.getUsersNames());

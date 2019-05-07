@@ -32,6 +32,10 @@ module.exports = (server) => {
         path: '/room/{room}/update',
         handler: (request, h) => {
 
+            // only accept updates from the writer
+            if (!server.methods.isWriter(Object.assign(request.auth.credentials, {id: request.socket.id}), request.params.room))
+                return h.response().code(403);
+
             let room = '/room/' + request.params.room;
             sc.save(request.params.room, request.payload);
             server.publish(room + '/updates', request.payload);
