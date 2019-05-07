@@ -1,38 +1,109 @@
 module.exports = {
     name: 'comocodo-room-management',
     register: async (server) => {
+
+        // in seconds, time before the writer becomes the next person who asked
+        const HOTSEAT_TIMER = 60;
+
+        function Room() {
+            let users = {};
+
+            let hotSeatTimeout = null;
+            let passPen = null;
+
+            let writer = null;
+
+            this.addUser = (user) => {
+                users[user.id] = user.name;
+                if (writer == null) this.setWriter(user.id);
+            };
+
+            this.removeUser = (userId) => {
+                delete users[userId];
+                if (writer == userId) {
+                    // handles passing the pen now if someone is waiting for it
+                    if (this.dropPen()) return;
+
+                    // if there is someone else in the room, make the "oldest" user writer
+                    if (Object.keys(users).length)
+                        // don't use setWriter, it will set a timeout to pass the pen
+                        writer = Object.keys(users)[0];
+                    // or if the leaving user was the last one
+                    else
+                        writer = null;
+                }
+            };
+
+            this.hasUser = (userId) => Object.keys(users).indexOf(userId) !== -1;
+
+            this.getUsersNames = () => {
+                let names = [];
+                for (let id in users) {
+                    if (id == writer) names.push(users[id] + " (w)");
+                    else names.push(users[id]);
+                }
+                return names;
+            }
+
+            this.getWriter = () => writer;
+
+            this.setWriter = (userId) => {
+                // if the user is not in the room, return
+                if (!this.hasUser(userId)) return false;
+
+                // if nobody is writing, set the writer immediately
+                if (writer == null) return writer = userId, true;
+
+                // if there is already someone waiting to be writer, return
+                if (passPen != null) return false;
+
+                passPen = () => {
+                    writer = userId;
+                }
+                hotSeatTimeout = setTimeout(passPen, HOTSEAT_TIMER * 1000);
+                return true;
+            }
+
+            this.dropPen = () => {
+                if (passPen === null) return false;
+                clearTimeout(hotSeatTimeout);
+                hotSeatTimeout = null;
+                passPen();
+                passPen = null;
+                return true;
+            }
+        }
+
         // the user log, room by room
-        server.app.whoswhere = {};
+        server.app.userLog = {};
 
         // who is a credentials object {name: 'not so unique name', id: unique_id}
 
         server.method('enters', async (who, where) => {
-            console.debug(who.name + ' enters ' + where);
 
             // inits the user log if there is none for the room
-            if (!server.app.whoswhere[where]) server.app.whoswhere[where] = {};
+            if (!server.app.userLog[where]) server.app.userLog[where] = new Room();
             
             // appends the user
-            server.app.whoswhere[where][who.id] = who.name;
+            server.app.userLog[where].addUser(who);
 
-            server.methods.updateUsersList(where);
+            server.methods.updateUsersList(where, server.app.userLog[where]);
             return true;
         });
 
         server.method('exits', async (who, where) => {
             // if the room or the user in the room is not found, stop here
-            if (!server.app.whoswhere[where] || !server.app.whoswhere[where][who.id]) return false;
+            if (!server.app.userLog[where] || !server.app.userLog[where].hasUser(who.id)) return false;
 
-            console.debug(who.name + ' leaves ' + where);
-            delete server.app.whoswhere[where][who.id];
+            server.app.userLog[where].removeUser(who.id);
 
-            server.methods.updateUsersList(where);
+            server.methods.updateUsersList(where, server.app.userLog[where]);
             return true;
         });
 
         server.method('ragequits', async (who) => {
             // when a user disconnects from its websocket, we have to browser the user log
-            for (let where in server.app.whoswhere) {
+            for (let where in server.app.userLog) {
                 // when the room is found, stop browsing
                 if (server.methods.exits(who, where)) break;
             }
@@ -40,8 +111,8 @@ module.exports = {
             // no need to trigger the update, it is done when the right room is found
         })
 
-        server.method('updateUsersList', async (room) => {
-            server.publish('/room/' + room + '/users', Object.values(server.app.whoswhere[room]));
+        server.method('updateUsersList', async (where, room) => {
+            server.publish('/room/' + where + '/users', room.getUsersNames());
         });
     }
 };

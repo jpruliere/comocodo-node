@@ -77,8 +77,23 @@ describe('App configuration', function() {
 describe('Behavior tests', function() {
 
     it ('user logs in upon getting the script', function() {
-        expect(server.app.userLog[testRoom][john.id]).to.equal('john');
+        expect(server.app.userLog[testRoom].hasUser(john.id)).to.be.true;
     });
+
+    it('first user in a room gets the pen', function() {
+        expect(server.app.userLog[testRoom].getWriter()).to.equal(john.id);
+    });
+
+    it('second user in the room does not get the pen', async function() {
+        await mary.connect(maryWSCreds);
+        await mary.request('/room/' + testRoom + '/get');
+        expect(server.app.userLog[testRoom].getWriter()).to.not.equal(mary.id);
+    });
+
+    it('writer passes the pen upon leaving the room', async function() {
+        server.app.userLog[testRoom].removeUser(john.id);
+        expect(server.app.userLog[testRoom].getWriter()).to.equal(mary.id);
+    })
 
     // clean up
     after(() => {
