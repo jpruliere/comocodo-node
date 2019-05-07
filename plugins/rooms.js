@@ -12,14 +12,17 @@ module.exports = {
             let passPen = null;
 
             let writer = null;
+            let nextWriter = null;
 
             this.addUser = (user) => {
                 users[user.id] = user.name;
                 if (writer == null) this.setWriter(user.id);
+                this.triggerUpdate();
             };
 
             this.updateUser = (user) => {
                 users[user.id] = user.name;
+                this.triggerUpdate();
             }
 
             this.removeUser = (userId) => {
@@ -36,6 +39,7 @@ module.exports = {
                     else
                         writer = null;
                 }
+                this.triggerUpdate();
             };
 
             this.hasUser = (userId) => Object.keys(users).indexOf(userId) !== -1;
@@ -46,7 +50,12 @@ module.exports = {
                     if (id == writer) names.push({
                         name: users[id],
                         id: id,
-                        writer: true
+                        writer: 'current'
+                    });
+                    else if (id == nextWriter) names.push({
+                        name: users[id],
+                        id: id,
+                        writer: 'next'
                     });
                     else names.push({
                         name: users[id],
@@ -59,20 +68,31 @@ module.exports = {
 
             this.getWriter = () => writer;
 
+            // WIP, not really a setter
             this.setWriter = (userId) => {
                 // if the user is not in the room, return
                 if (!this.hasUser(userId)) return false;
 
                 // if nobody is writing, set the writer immediately
-                if (writer == null) return writer = userId, true;
+                if (writer == null) {
+                    writer = userId;
+                    this.triggerUpdate();
+                    return true;
+                }
 
                 // if there is already someone waiting to be writer, return
                 if (passPen != null) return false;
 
+                console.log("" + userId + " will soon be a writer !");
+
+                nextWriter = userId;
                 passPen = () => {
                     writer = userId;
+                    nextWriter = null;
+                    this.triggerUpdate();
                 }
                 hotSeatTimeout = setTimeout(passPen, HOTSEAT_TIMER * 1000);
+                this.triggerUpdate();
                 return true;
             }
 
@@ -82,7 +102,17 @@ module.exports = {
                 hotSeatTimeout = null;
                 passPen();
                 passPen = null;
+                this.triggerUpdate();
                 return true;
+            }
+
+            // DP listener, simpler and less dependant
+            this.onUpdate = (callback, params) => {
+                this.update = {callback, params};
+            }
+
+            this.triggerUpdate = () => {
+                if (typeof this.update !== 'undefined') this.update.callback(...this.update.params);
             }
         }
 
@@ -94,12 +124,16 @@ module.exports = {
         server.method('enters', async (who, where) => {
 
             // inits the user log if there is none for the room
-            if (!server.app.userLog[where]) server.app.userLog[where] = new Room();
+            if (!server.app.userLog[where]) {
+                server.app.userLog[where] = new Room();
+                server.app.userLog[where].onUpdate(server.methods.updateUsersList, [where, server.app.userLog[where]]);
+            }
             
             // appends the user
             server.app.userLog[where].addUser(who);
 
-            server.methods.updateUsersList(where, server.app.userLog[where]);
+            // now rooms handle broadcasts as an event trigger
+            //server.methods.updateUsersList(where, server.app.userLog[where]);
             return true;
         });
 
@@ -109,7 +143,8 @@ module.exports = {
 
             server.app.userLog[where].removeUser(who.id);
 
-            server.methods.updateUsersList(where, server.app.userLog[where]);
+            // now rooms handle broadcasts as an event trigger
+            //server.methods.updateUsersList(where, server.app.userLog[where]);
             return true;
         });
 
@@ -125,7 +160,13 @@ module.exports = {
 
         server.method('changeName', (who, where) => {
             server.app.userLog[where].updateUser(who);
-            server.methods.updateUsersList(where, server.app.userLog[where]);
+
+            // now rooms handle broadcasts as an event trigger
+            //server.methods.updateUsersList(where, server.app.userLog[where]);
+        });
+
+        server.method('askToBeWriter', (who, where) => {
+            return server.app.userLog[where].setWriter(who.id);
         });
 
         server.method('isWriter', (who, where) => {

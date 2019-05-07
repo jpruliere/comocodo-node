@@ -8,9 +8,10 @@ const app = {
     scriptBox: document.querySelector('#mcd-builder'),
     usersList: document.querySelector('#users-list'),
     nameHolder: document.querySelector('#user-name'),
+    penButton: document.querySelector('#ask-writer'),
     init: async () => {
 
-        client.onError = (err) => console.log(err);
+        client.onError = console.log;
         await client.connect({
             auth: {
                 headers: {
@@ -27,11 +28,13 @@ const app = {
                 let li = document.createElement('li');
                 li.innerText = user.name;
                 li.dataset.socketId = user.id;
-                if (user.writer) {
+                if (user.writer == "current") {
                     // make it obvious
                     li.classList.add('writer');
                     // if it is not me, disable the textarea
                     app.scriptBox.disabled = user.id != client.id;
+                } else if (user.writer == "next") {
+                    li.classList.add('next-writer');
                 }
                 app.usersList.appendChild(li);
             });
@@ -61,6 +64,13 @@ const app = {
                 payload: [newName, app.room]
             }).then(() => app.nameHolder.textContent = "(as " + newName + ")");
         });
+
+        app.penButton.addEventListener('click', () => {
+            client.request({
+                path: location.pathname + '/pen',
+                method: 'GET'
+            });
+        })
 
         app.scriptBox.addEventListener('input', (evt) => {
             app.updateSourceIsMe = true;
