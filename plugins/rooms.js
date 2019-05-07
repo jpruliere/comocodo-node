@@ -36,11 +36,19 @@ module.exports = {
 
             this.hasUser = (userId) => Object.keys(users).indexOf(userId) !== -1;
 
-            this.getUsersNames = () => {
+            this.getUsers = () => {
                 let names = [];
                 for (let id in users) {
-                    if (id == writer) names.push(users[id] + " (w)");
-                    else names.push(users[id]);
+                    if (id == writer) names.push({
+                        name: users[id],
+                        id: id,
+                        writer: true
+                    });
+                    else names.push({
+                        name: users[id],
+                        id: id,
+                        writer: false
+                    });
                 }
                 return names;
             }
@@ -116,7 +124,7 @@ module.exports = {
         });
 
         server.method('updateUsersList', async (where, room) => {
-            server.publish('/room/' + where + '/users', room.getUsersNames());
+            server.publish('/room/' + where + '/users', room.getUsers());
         });
     }
 };

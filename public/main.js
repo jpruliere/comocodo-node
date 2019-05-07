@@ -22,7 +22,14 @@ const app = {
             app.usersList.innerHTML = '';
             update.forEach(user => {
                 let li = document.createElement('li');
-                li.innerText = user;
+                li.innerText = user.name;
+                li.dataset.socketId = user.id;
+                if (user.writer) {
+                    // make it obvious
+                    li.classList.add('writer');
+                    // if it is not me, disable the textarea
+                    app.scriptBox.disabled = user.id != client.id;
+                }
                 app.usersList.appendChild(li);
             });
         };
