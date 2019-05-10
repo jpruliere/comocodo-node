@@ -5,26 +5,33 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Comocodo</title>
         <link rel="stylesheet" href="/assets/bulma.css">
-        <style>
-            .writer {
-                font-weight: bold;
-            }
-            .next-writer {
-                font-style: italic;
-            }
-        </style>
+        <link rel="stylesheet" href="/assets/app.css">
     </head>
     <body>
-        <section class="section">
-            <div class="container">
+        <header class="navbar columns is-vcentered">
+            <div class="column has-text-centered">
+                <h3 class="subtitle">room: <span title="go somewhere else" class="app-param" id="room-name"></span></h3>
+            </div>
+            <div class="column has-text-centered">
                 <h1 class="title">
-                    Comocodo <span id="user-name"></span><button type="button" id="change-user-name">Change name</button>
+                    <em>co</em><strong>m</strong>o<strong>c</strong>o<strong>d</strong>o
                 </h1>
+            </div>
+            <div class="column has-text-centered">
+                <h3 class="subtitle">user: <span title="change my name" class="app-param" id="user-name"></span></h3>
+            </div>
+        </header>
+
+        <main class="columns">
+            <section class="column">
                 <textarea id="mcd-builder"></textarea>
                 <button type="button" id="ask-writer">Ask for the pen</button>
                 <ul id="users-list"></ul>
-            </div>
-        </section>
+            </section>
+            <section class="column">
+                <div id="diagram-output"></div>
+            </section>
+        </main>
         <script src="/assets/bundle.js"></script>
     </body>
 </html>

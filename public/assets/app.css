@@ -1,0 +1,21 @@
+body {
+    margin: .75rem;
+}
+header {
+    border-bottom: 1px solid #eee;
+}
+h1.title {
+    font-weight: normal;
+}
+h1.title strong {
+    font-weight: bolder;
+}
+.writer {
+    font-weight: bold;
+}
+.next-writer {
+    font-style: italic;
+}
+.app-param {
+    cursor: pointer;
+}

@@ -9,8 +9,11 @@ const app = {
     scriptBox: document.querySelector('#mcd-builder'),
     usersList: document.querySelector('#users-list'),
     nameHolder: document.querySelector('#user-name'),
+    roomHolder: document.querySelector('#room-name'),
     penButton: document.querySelector('#ask-writer'),
     init: async () => {
+
+        app.roomHolder.textContent = app.room;
 
         client.onError = console.log;
         await client.connect({
@@ -21,7 +24,7 @@ const app = {
             }
         });
 
-        app.nameHolder.textContent = "(as " + app.getName() + ")";
+        app.nameHolder.textContent = app.getName();
 
         const updateUsersList = (update) => {
             app.usersList.innerHTML = '';
@@ -64,7 +67,7 @@ const app = {
         
         client.subscribe(location.pathname + '/updates', updateScriptBox);
 
-        document.querySelector('#change-user-name').addEventListener('click', () => {
+        app.nameHolder.addEventListener('click', () => {
             let newName = prompt('Enter your new username');
             if (!newName) return;
             app.setName(newName);
@@ -72,8 +75,14 @@ const app = {
                 path: '/user/change-name',
                 method: 'POST',
                 payload: [newName, app.room]
-            }).then(() => app.nameHolder.textContent = "(as " + newName + ")");
+            }).then(() => app.nameHolder.textContent = newName);
         });
+
+        app.roomHolder.addEventListener('click', () => {
+            let newRoom = prompt('Where to go ?');
+            if (!newRoom) return;
+            location.href = '/room/' + newRoom;
+        })
 
         app.penButton.addEventListener('click', app.askForThePen);
 
