@@ -6,59 +6,59 @@ module.exports = {
         const HOTSEAT_TIMER = 60;
 
         function Room() {
-            let users = {};
+            this._users = {};
 
-            let hotSeatTimeout = null;
-            let passPen = null;
+            this._hotSeatTimeout = null;
+            this._passPen = null;
 
-            let writer = null;
-            let nextWriter = null;
+            this._writer = null;
+            this._nextWriter = null;
 
             this.addUser = (user) => {
-                users[user.id] = user.name;
-                if (writer == null) this.setWriter(user.id);
+                this._users[user.id] = user.name;
+                if (this._writer == null) this.setWriter(user.id);
                 this.triggerUpdate();
             };
 
             this.updateUser = (user) => {
-                users[user.id] = user.name;
+                this._users[user.id] = user.name;
                 this.triggerUpdate();
             }
 
             this.removeUser = (userId) => {
-                delete users[userId];
-                if (writer == userId) {
+                delete this._users[userId];
+                if (this._writer == userId) {
                     // handles passing the pen now if someone is waiting for it
                     if (this.dropPen()) return;
 
                     // if there is someone else in the room, make the "oldest" user writer
-                    if (Object.keys(users).length)
+                    if (Object.keys(this._users).length)
                         // don't use setWriter, it will set a timeout to pass the pen
-                        writer = Object.keys(users)[0];
+                        this._writer = Object.keys(this._users)[0];
                     // or if the leaving user was the last one
                     else
-                        writer = null;
+                        this._writer = null;
                 }
                 this.triggerUpdate();
             };
 
-            this.hasUser = (userId) => Object.keys(users).indexOf(userId) !== -1;
+            this.hasUser = (userId) => Object.keys(this._users).indexOf(userId) !== -1;
 
             this.getUsers = () => {
                 let names = [];
-                for (let id in users) {
-                    if (id == writer) names.push({
-                        name: users[id],
+                for (let id in this._users) {
+                    if (id == this._writer) names.push({
+                        name: this._users[id],
                         id: id,
                         writer: 'current'
                     });
-                    else if (id == nextWriter) names.push({
-                        name: users[id],
+                    else if (id == this._nextWriter) names.push({
+                        name: this._users[id],
                         id: id,
                         writer: 'next'
                     });
                     else names.push({
-                        name: users[id],
+                        name: this._users[id],
                         id: id,
                         writer: false
                     });
@@ -66,7 +66,7 @@ module.exports = {
                 return names;
             }
 
-            this.getWriter = () => writer;
+            this.getWriter = () => this._writer;
 
             // WIP, not really a setter
             this.setWriter = (userId) => {
@@ -74,31 +74,31 @@ module.exports = {
                 if (!this.hasUser(userId)) return false;
 
                 // if nobody is writing, set the writer immediately
-                if (writer == null) {
-                    writer = userId;
+                if (this._writer == null) {
+                    this._writer = userId;
                     this.triggerUpdate();
                     return true;
                 }
 
                 // if there is already someone waiting to be writer, return
-                if (passPen != null) return false;
+                if (this._passPen != null) return false;
 
-                nextWriter = userId;
-                passPen = () => {
-                    writer = userId;
-                    nextWriter = passPen = null;
+                this._nextWriter = userId;
+                this._passPen = () => {
+                    this._writer = userId;
+                    this._nextWriter = this._passPen = null;
                     this.triggerUpdate();
                 }
-                hotSeatTimeout = setTimeout(passPen, HOTSEAT_TIMER * 1000);
+                this._hotSeatTimeout = setTimeout(this._passPen, HOTSEAT_TIMER * 1000);
                 this.triggerUpdate();
                 return true;
             }
 
             this.dropPen = () => {
-                if (passPen === null) return false;
-                clearTimeout(hotSeatTimeout);
-                hotSeatTimeout = null;
-                passPen();
+                if (this._passPen === null) return false;
+                clearTimeout(this._hotSeatTimeout);
+                this._hotSeatTimeout = null;
+                this._passPen();
                 return true;
             }
 
