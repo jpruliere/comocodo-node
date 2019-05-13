@@ -11,6 +11,7 @@ const app = {
     nameHolder: document.querySelector('#user-name'),
     roomHolder: document.querySelector('#room-name'),
     penButton: document.querySelector('#ask-writer'),
+    diagramBox: document.querySelector('#diagram-output'),
     init: async () => {
 
         app.roomHolder.textContent = app.room;
@@ -66,6 +67,13 @@ const app = {
         updateScriptBox(script.payload);
         
         client.subscribe(location.pathname + '/updates', updateScriptBox);
+
+        const updateDiagramBox = (diagram) => {
+            if (!diagram) return;
+            app.diagramBox.innerHTML = diagram;
+        }
+
+        client.subscribe(location.pathname + '/diagram', updateDiagramBox);
 
         app.nameHolder.addEventListener('click', () => {
             let newName = prompt('Enter your new username');

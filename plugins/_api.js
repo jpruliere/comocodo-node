@@ -26,6 +26,8 @@ module.exports = (server) => {
         }
     });
 
+    let roomTimeouts = {};
+
     // update the script
     server.route({
         method: 'POST',
@@ -36,9 +38,15 @@ module.exports = (server) => {
             if (!server.methods.isWriter(Object.assign(request.auth.credentials, {id: request.socket.id}), request.params.room))
                 return h.response().code(403);
 
-            let room = '/room/' + request.params.room;
-            sc.save(request.params.room, request.payload);
-            server.publish(room + '/updates', request.payload);
+            let room = request.params.room;
+            clearTimeout(roomTimeouts[room]);
+            roomTimeouts[room] = setTimeout(async () => {
+                let svg = await sc.generate(request.params.room);
+                server.publish('/room/' + room + '/diagram', svg);
+            }, 2000);
+            
+            sc.save(room, request.payload);
+            server.publish('/room/' + room + '/updates', request.payload);
             return h.response().code(204);
             
         }

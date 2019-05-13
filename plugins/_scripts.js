@@ -4,6 +4,7 @@ const util = require('util');
 const read = util.promisify(fs.readFile);
 const write = util.promisify(fs.writeFile);
 const unlink = util.promisify(fs.unlink);
+const exec = util.promisify(require('child_process').exec);
 
 module.exports = {
     /**
@@ -22,6 +23,12 @@ module.exports = {
             var data = false;
         }
         return data;
+    },
+    generate: async (fileName) => {
+        const { stdout, stderr } = await exec('python mocodo/mocodo.py --params_path mocodo/params.json --input rooms/' + fileName + '.mcd');
+        if (stderr) return false;
+        await unlink('rooms/' + fileName + '_svg.py');
+        return (await read('rooms/' + fileName + '.svg')).toString();
     },
 
     /**

@@ -14,5 +14,7 @@ module.exports = {
         server.subscription('/room/{room}/updates');
 
         server.subscription('/room/{room}/users');
+
+        server.subscription('/room/{room}/diagram');
     }
 };
