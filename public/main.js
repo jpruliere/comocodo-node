@@ -12,10 +12,21 @@ const app = {
     roomHolder: document.querySelector('#room-name'),
     penButton: document.querySelector('#ask-writer'),
     diagramBox: document.querySelector('#diagram-output'),
+    
     init: async () => {
 
         app.roomHolder.textContent = app.room;
+        app.nameHolder.textContent = app.getName();
 
+        await app.initClient();
+        app.initSubscriptions();
+        app.initEvents();
+
+        let script = await client.request(location.pathname + '/get');
+        app.updateScriptBox(script.payload);
+    },
+
+    initClient: async () => {
         client.onError = console.log;
         await client.connect({
             auth: {
@@ -24,84 +35,54 @@ const app = {
                 }
             }
         });
-
-        app.nameHolder.textContent = app.getName();
-
-        const updateUsersList = (update) => {
-            app.usersList.innerHTML = '';
-            update.forEach(user => {
-                let li = document.createElement('li');
-                li.innerText = user.name;
-                li.dataset.socketId = user.id;
-
-                // found myself
-                if (user.id == client.id) {
-                    app.setWriter(user.writer == "current");
-                }
-
-                if (user.writer == "current") {
-                    // make it obvious
-                    li.classList.add('writer');
-                    // if it is not me, disable the textarea
-                    app.scriptBox.disabled = !app.writer;
-                } else if (user.writer == "next") {
-                    li.classList.add('next-writer');
-                    if (app.writer) {
-                        app.penButton.style.display = "block";
-                    }
-                }
-                app.usersList.appendChild(li);
-            });
-        };
-
-        client.subscribe(location.pathname + '/users', updateUsersList);
-
-        const updateScriptBox = (update) => {
-            if (!update) update = "";
-            if (!app.updateSourceIsMe)
-                app.scriptBox.value = update;
-            app.updateSourceIsMe = false;
-        };
-
-        let script = await client.request(location.pathname + '/get');
-        updateScriptBox(script.payload);
-        
-        client.subscribe(location.pathname + '/updates', updateScriptBox);
-
-        const updateDiagramBox = (diagram) => {
-            if (!diagram) return;
-            app.diagramBox.innerHTML = diagram;
-        }
-
-        client.subscribe(location.pathname + '/diagram', updateDiagramBox);
-
-        app.nameHolder.addEventListener('click', () => {
-            let newName = prompt('Enter your new username');
-            if (!newName) return;
-            app.setName(newName);
-            client.request({
-                path: '/user/change-name',
-                method: 'POST',
-                payload: [newName, app.room]
-            }).then(() => app.nameHolder.textContent = newName);
-        });
-
-        app.roomHolder.addEventListener('click', () => {
-            let newRoom = prompt('Where to go ?');
-            if (!newRoom) return;
-            location.href = '/room/' + newRoom;
-        })
-
+    },
+    initSubscriptions: () => {
+        client.subscribe(location.pathname + '/users', app.updateUsersList);
+        client.subscribe(location.pathname + '/updates', app.updateScriptBox);
+        client.subscribe(location.pathname + '/diagram', app.updateDiagramBox);
+    },
+    initEvents: () => {
+        app.nameHolder.addEventListener('click', app.changeName);
+        app.roomHolder.addEventListener('click', app.changeRoom);
         app.penButton.addEventListener('click', app.askForThePen);
+        app.scriptBox.addEventListener('input', app.handleScriptUpdate);
+    },
 
-        app.scriptBox.addEventListener('input', (evt) => {
-            app.updateSourceIsMe = true;
-            client.request({
-                path: location.pathname + '/update',
-                method: 'POST',
-                payload: [evt.target.value]
-            });
+    updateUsersList: (update) => {
+        app.usersList.innerHTML = '';
+        update.forEach(user => {
+            let li = document.createElement('li');
+            li.innerText = user.name;
+            li.dataset.socketId = user.id;
+
+            // found myself
+            if (user.id == client.id) {
+                app.setWriter(user.writer == "current");
+            }
+
+            if (user.writer == "current") {
+                // make it obvious
+                li.classList.add('writer');
+                // if it is not me, disable the textarea
+                app.scriptBox.disabled = !app.writer;
+            } else if (user.writer == "next") {
+                li.classList.add('next-writer');
+                if (app.writer) {
+                    app.penButton.style.display = "block";
+                }
+            }
+            app.usersList.appendChild(li);
         });
+    },
+    updateScriptBox: (update) => {
+        if (!update) update = "";
+        if (!app.updateSourceIsMe)
+            app.scriptBox.value = update;
+        app.updateSourceIsMe = false;
+    },
+    updateDiagramBox: (diagram) => {
+        if (!diagram) return;
+        app.diagramBox.innerHTML = diagram;
     },
     setWriter: (amWriter) => {
         if (amWriter && !app.writer) {
@@ -144,6 +125,29 @@ const app = {
     },
     hasName: () => {
         return !!localStorage.getItem('username');
+    },
+    changeName: () => {
+        let newName = prompt('Enter your new username');
+        if (!newName) return;
+        app.setName(newName);
+        client.request({
+            path: '/user/change-name',
+            method: 'POST',
+            payload: [newName, app.room]
+        }).then(() => app.nameHolder.textContent = newName);
+    },
+    changeRoom: () => {
+        let newRoom = prompt('Where to go ?');
+        if (!newRoom) return;
+        location.href = '/room/' + newRoom;
+    },
+    handleScriptUpdate: (evt) => {
+        app.updateSourceIsMe = true;
+        client.request({
+            path: location.pathname + '/update',
+            method: 'POST',
+            payload: [evt.target.value]
+        });
     }
 };
 

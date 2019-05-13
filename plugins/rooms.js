@@ -85,7 +85,7 @@ module.exports = {
 
                 nextWriter = userId;
                 passPen = () => {
-                   writer = userId;
+                    writer = userId;
                     nextWriter = passPen = null;
                     this.triggerUpdate();
                 }
@@ -99,7 +99,6 @@ module.exports = {
                 clearTimeout(hotSeatTimeout);
                 hotSeatTimeout = null;
                 passPen();
-                this.triggerUpdate();
                 return true;
             }
 
